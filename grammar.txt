@@ -1,0 +1,41 @@
+& = and, | = or, ! = not
+// Conditional syntax
+
+
+dictionary dictionaryName (keyType = valueType)
+{
+    [key] = value;
+}
+
+array arrayName (valueType)
+{
+    value;
+}
+// Type based
+
+
+function functionName (paramType paramName, continued)
+{
+
+}
+// Parameter based
+
+
+while (x condition y)
+{
+	
+}
+
+if (x condition y)
+{
+
+}
+else if (x condition y)
+{
+
+}
+else
+{
+
+}
+// Condition based

@@ -1,0 +1,40 @@
+Lexical analyzer:
+	Reads a string and turns it into labeled tokens, example output:
+
+	identifier: x
+	operator: =
+	integer: 142
+	identifier: x
+	operator: +=
+	identifier: x
+	keyword: print
+	delimiter: (
+	string: "hello world"
+	delimiter: ,
+	identifier: x
+	delimiter: )
+
+
+Parser:
+	Takes lexer data & groups those lexer instructions into assignments, example:
+	
+	Assignment 1:
+		identifier: x
+		operator: =
+		integer: 142
+	Variable creation
+
+	Assignment 2:
+		identifier: x
+		operator: +=
+		identifier: x
+	Plus-equals operation where variable x is set to a value of x + x
+
+	Assignment 3:
+		keyword: print
+		delimiter: (
+		string: "hello world"
+		delimiter: ,
+		identifier: x
+		delimiter: )
+	Execute the pre-made print function with the arguments "hello world" and variable x.
