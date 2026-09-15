@@ -38,7 +38,3 @@ Parser:
 		identifier: x
 		delimiter: )
 	Execute the pre-made print function with the arguments "hello world" and variable x.
-
-Interpreter:
-	Takes assignments from the parser & actually executes them.
-	Keeps track of runtime state, eg. variables, function inputs, scopes, etc

@@ -13,18 +13,42 @@
 #include <errno.h>      // errno
 #include <windows.h>    // Windows API
 #include <conio.h>      // _getch(), _kbhit(), etc.
-#include "console_setup.h"    // Console setup header file
-#include "lexer.h"            // Lexical Analysis header file
+#include "console_setup.h"    // Console setup header file.
+#include "parser.h"           // Parser header file for turning instructions into mapped assignments.
+
+char* readFile(char* path)
+{
+    FILE* file = fopen(path, "rb"); if (file == NULL) { return NULL; }
+    fseek(file, 0, SEEK_END); long size = ftell(file); rewind(file);
+    char* input = malloc(size + 1); fread(input, 1, size, file); input[size] = '\0';
+    fclose(file);
+    return input;
+}
+// Read a files contents by inputted path. Outputs what's in the file as a string.
 
 int main(void)
 {
     setupConsoleWindow(1366/2.5, 768/2.5, 800, 500);
 
-    //struct AnalyzedInstructions AnalyzedInstructions = lexicalAnalysis("122 + 2 * (3 - 4) / 5");
-    //for (int i = 0; i < AnalyzedInstructions.count; i++)
-    //{
-       //printf("token type: %s, token: %s\n", AnalyzedInstructions.Tokens[i].type, AnalyzedInstructions.Tokens[i].value);
-    //}
+    char path[256]; printf("File path: "); fgets(path, sizeof(path), stdin); path[strcspn(path, "\n")] = '\0';
+    char* input = readFile(path);
+    if (input == NULL)
+    {
+        printf("Could not open file.\n");
+        return 1;
+    }
+    // Input source file location to interpret.
+
+    struct ParsedAssignments Assignments = ParseInstructionsIntoAssignments(input);
+    for (int i = 0; i < Assignments.count; i++)
+    {
+        printf("Assignment %d:\n", i);
+        for (int i2 = 0; i2 < Assignments.InvididualAssignments[i].count; i2++)
+        {
+            printf("    %s: %s\n", Assignments.InvididualAssignments[i].Tokens[i2].type, Assignments.InvididualAssignments[i].Tokens[i2].value);
+        }
+    }
+    // Parse source file contents.
 
     while (1) {}; return 0;
 }

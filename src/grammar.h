@@ -14,13 +14,13 @@
 #include <windows.h>    // Windows API
 #include <conio.h>      // _getch(), _kbhit(), etc.
 
-void setupConsoleWindow(int x, int y, int width, int height)
-{
-    HWND console = GetConsoleWindow(); MoveWindow(console, x, y, width, height, TRUE);
-    SetWindowLong(
-        console,
-        GWL_STYLE,
-        GetWindowLong(console, GWL_STYLE) & ~(WS_MAXIMIZEBOX | WS_SIZEBOX)
-    );
-}
-// Resize & reposition the console window then disable resizing and maximizing.
+#ifndef GRAMMAR_H
+#define GRAMMAR_H
+    static const char* Operators[] = {
+        "=", "+", "-", "*", "/", "%", "==",
+        "!=", ">", "<", ">=", "<=", "!", "&",
+        "|", "+=", "-=", "/=", "*=", "%="
+    };
+    static const char* Delimiters[] = { "(", ")", "{", "}", "[", "]", ";", "," };
+    static const char* Keywords[] = { "if", "else", "while", "return", "int", "void", "string", "print" };
+#endif

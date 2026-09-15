@@ -13,74 +13,170 @@
 #include <errno.h>      // errno
 #include <windows.h>    // Windows API
 #include <conio.h>      // _getch(), _kbhit(), etc.
+#include "grammar.h"    // Language grammar / available syntax header file.
 
-bool isEquals(char* token) { if (strcmp(token, "=") == 0) { return true; } return false; }
-bool isPlus(char* token) { if (strcmp(token, "+") == 0) { return true; } return false; }
-bool isPlusEquals(char* token) { if (strcmp(token, "+=") == 0) { return true; } return false; }
-bool isNegative(char* token) { if (strcmp(token, "-") == 0) { return true; } return false; }
-bool isNegativeEquals(char* token) { if (strcmp(token, "-=") == 0) { return true; } return false; }
-bool isLessThan(char* token) { if (strcmp(token, "<") == 0) { return true; } return false; }
-bool isLessThanAndEquals(char* token) { if (strcmp(token, "<=") == 0) { return true; } return false; }
-bool isMoreThan(char* token) { if (strcmp(token, ">") == 0) { return true; } return false; }
-bool isMoreThanAndEquals(char* token) { if (strcmp(token, ">=") == 0) { return true; } return false; }
-bool isTimes(char* token) { if (strcmp(token, "*") == 0) { return true; } return false; }
-bool isTimesEquals(char* token) { if (strcmp(token, "*=") == 0) { return true; } return false; }
-bool isDivide(char* token) { if (strcmp(token, "/") == 0) { return true; } return false; }
-bool isDivideEquals(char* token) { if (strcmp(token, "/=") == 0) { return true; } return false; }
-bool isEqualEqual(char* token) { if (strcmp(token, "==") == 0) { return true; } return false; }
-bool isNotEqual(char* token) { if (strcmp(token, "!=") == 0) { return true; } return false; }
-bool isAnd(char* token) { if (strcmp(token, "&") == 0) { return true; } return false; }
-bool isNot(char* token) { if (strcmp(token, "!") == 0) { return true; } return false; }
-bool isOr(char* token) { if (strcmp(token, "|") == 0) { return true; } return false; }
-// Identify operators.
-
-bool isLeftParenthesis(char* token) { if (strcmp(token, "(") == 0) { return true; } return false; }
-bool isRightParenthesis(char* token) { if (strcmp(token, ")") == 0) { return true; } return false; }
-bool isLeftCurlyBracket(char* token) { if (strcmp(token, "{") == 0) { return true; } return false; }
-bool isRightCurlyBracket(char* token) { if (strcmp(token, "}") == 0) { return true; } return false; }
-bool isLeftSquareBracket(char* token) { if (strcmp(token, "[") == 0) { return true; } return false; }
-bool isRightSquareBracket(char* token) { if (strcmp(token, "]") == 0) { return true; } return false; }
-bool isComma(char* token) { if (strcmp(token, ",") == 0) { return true; } return false; }
-bool isSemicolon(char* token) { if (strcmp(token, ";") == 0) { return true; } return false; }
-bool isPeriod(char* token) { if (strcmp(token, ".") == 0) { return true; } return false; }
-bool isColon(char* token) { if (strcmp(token, ":") == 0) { return true; } return false; }
-// Identify delimiters.
-
-bool isString(char* token)
+struct Token
 {
-    if (token[0] == '"' && token[strlen(token) - 1] == '"') { return true; } return false;
+    char* value;
+    char* type;
+};
+struct AnalyzedInstructions
+{
+    struct Token *Tokens;
+    int count;
+};
+
+bool isOperator(char* input)
+{
+    for (int i = 0; i < sizeof(Operators) / sizeof(Operators[0]); i++)
+    {
+        if (strcmp(input, Operators[i]) == 0) { return true; }
+    }
+    return false;
 }
-bool isInt(char* token)
+bool isDelimiter(char* input)
 {
-    for (int i = 0; i < strlen(token); i++) { if (!isdigit(token[i])) { return false; } } return true;
+    for (int i = 0; i < sizeof(Delimiters) / sizeof(Delimiters[0]); i++)
+    {
+        if (strcmp(input, Delimiters[i]) == 0) { return true; }
+    }
+    return false;
 }
-bool isBoolean(char* token)
+bool isKeyword(char* input)
 {
-    if (strcmp(token, "true") == 0 || strcmp(token, "false") == 0) { return true; } return false;
+    for (int i = 0; i < sizeof(Keywords) / sizeof(Keywords[0]); i++)
+    {
+        if (strcmp(input, Keywords[i]) == 0) { return true; }
+    }
+    return false;
+}
+// Identify keywords, operators, and delimiters.
+
+bool isString(char* input)
+{
+    if (strlen(input) < 2) { return false; }
+    if (input[0] == '"' && input[strlen(input) - 1] == '"') { return true; }
+    return false;
+}
+bool isInt(char* input)
+{
+    if (strlen(input) == 0) { return false; }
+    for (int i = 0; i < strlen(input); i++) { if (!isdigit(input[i])) { return false; } }
+    return true;
+}
+bool isBoolean(char* input)
+{
+    if (strcmp(input, "true") == 0 || strcmp(input, "false") == 0) { return true; }
+    return false;
+}
+bool isIdentifier(char* input)
+{
+    if (!isalpha(input[0]) && input[0] != '_') { return false; }
+    for (int i = 1; i < strlen(input); i++) { if (!isalnum(input[i]) && input[i] != '_') { return false; } }
+    return true;
 }
 // Identify strings, numbers, and booleans.
 
-bool nextCharMatchesTypeofToken(char* token, int currentTokenIndex, char* lexingString, int currentReadingIndex)
+bool nextCharMatchesTypeofToken(char* input, int currentTokenIndex, char* lexingString, int currentReadingIndex )
 {
-    char* tempQueryString = ("%s", token);
-    tempQueryString[currentTokenIndex] = lexingString[currentReadingIndex];
-
-    if (isOperator(token)) { if (isOperator(tempQueryString)) { return true; } }
-    else if (isInt(token)) { if (isOperator(tempQueryString)) { return true; } }
-    else { return false; }
+    if (lexingString[currentReadingIndex] == '\0') { return false; }
+    char queryString[256]; strcpy(queryString, input);
+    queryString[currentTokenIndex] = lexingString[currentReadingIndex];
+    queryString[currentTokenIndex + 1] = '\0';
+    if (isOperator(input)) { if (isOperator(queryString)) { return true; } }
+    else if (isInt(input)) { if (isInt(queryString)) { return true; } }
+    else if (isIdentifier(input)) { if (isIdentifier(queryString)) { return true; } }
+    return false;
 }
 // Check if extending operator & integer token values is possible.
 
-void lexicalAnalysis(char* lexingString)
+struct AnalyzedInstructions lexicalAnalysis(char* input)
 {
+    int analyzingLength = strlen(input);
     int currentReadingIndex = 0;
 
-    while (currentReadingIndex < strlen(lexingString))
+    struct AnalyzedInstructions AnalyzedInstructions = {
+        .Tokens = calloc(256, sizeof(*AnalyzedInstructions.Tokens)),
+        .count = 0
+    };
+    int currentAnalyzingIndex = 0;
+
+    while (currentReadingIndex < analyzingLength)
     {
-        char* token = ""; int currentTokenIndex = 0;
-        token[currentTokenIndex] = lexingString[currentReadingIndex];
+        char* token = malloc(sizeof(char) * 256);
+        int currentTokenIndex = 0; token[0] = '\0';
 
+        while
+        (
+            !isOperator(token)
+            && !isDelimiter(token)
+            && !isKeyword(token)
+            && !isString(token)
+            && !isBoolean(token)
+            && !isInt(token)
+            && !isIdentifier(token)
+            && currentReadingIndex < analyzingLength
+            && currentTokenIndex < 256
+        )
+        {
+            token[currentTokenIndex] = input[currentReadingIndex];
+            currentReadingIndex++; currentTokenIndex++; token[currentTokenIndex] = '\0';
+            while (nextCharMatchesTypeofToken(token, currentTokenIndex, input, currentReadingIndex))
+            {
+                token[currentTokenIndex] = input[currentReadingIndex];
+                currentReadingIndex++; currentTokenIndex++; token[currentTokenIndex] = '\0';
+            }
+            while (input[currentReadingIndex] == ' ' || input[currentReadingIndex] == '\n' || input[currentReadingIndex] == '\r') { currentReadingIndex++; }
+        }
+        // Read tokens fully.
 
+        bool addToInstructions = false;
+        char* tokenType = NULL;
+        if (isOperator(token))
+        {
+            addToInstructions = true;
+            tokenType = "Operator";
+        }
+        else if (isDelimiter(token))
+        {
+            addToInstructions = true;
+            tokenType = "Delimiter";
+        }
+        else if (isKeyword(token))
+        {
+            addToInstructions = true;
+            tokenType = "Keyword";
+        }
+        else if (isInt(token))
+        {
+            addToInstructions = true;
+            tokenType = "Integer";
+        }
+        else if (isString(token))
+        {
+            addToInstructions = true;
+            tokenType = "String";
+        }
+        else if (isBoolean(token))
+        {
+            addToInstructions = true;
+            tokenType = "Boolean";
+        }
+        else if (isIdentifier(token))
+        {
+            addToInstructions = true;
+            tokenType = "Identifier";
+        }
+        // Verify the token is a valid token & should be added to analyzed instructions.
+
+        if (addToInstructions)
+        {
+            AnalyzedInstructions.Tokens[currentAnalyzingIndex].type = tokenType;
+            AnalyzedInstructions.Tokens[currentAnalyzingIndex].value = token;
+            currentAnalyzingIndex++; AnalyzedInstructions.count++;
+        }
+        // Add token & token type to analyzed instructions.
     }
+    return AnalyzedInstructions;
 }
 // Lexical analysis for an inputted string.
